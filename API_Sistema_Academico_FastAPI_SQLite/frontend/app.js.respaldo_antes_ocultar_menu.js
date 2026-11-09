@@ -1,0 +1,1283 @@
+﻿// Sistema AcadÃƒÂ©mico Ã¢â‚¬â€ frontend (vanilla JS, sin dependencias).
+// Como este archivo se sirve desde la misma API (FastAPI + StaticFiles),
+// las rutas son relativas: no hay problema de CORS.
+
+const URL_BASE_API = "/api/v1";
+
+const vistaLogin = document.getElementById("vista-login");
+const vistaDashboard = document.getElementById("vista-dashboard");
+
+const formularioLogin = document.getElementById("formulario-login");
+const campoUsuario = document.getElementById("campo-usuario");
+const campoClave = document.getElementById("campo-clave");
+const botonEntrar = document.getElementById("boton-entrar");
+const mensajeLogin = document.getElementById("mensaje-login");
+
+const tituloBienvenida = document.getElementById("titulo-bienvenida");
+const chipUsuario = document.getElementById("chip-usuario");
+const botonActualizar = document.getElementById("boton-actualizar");
+const botonSalir = document.getElementById("boton-salir");
+const filaTarjetas = document.getElementById("fila-tarjetas");
+const textoPeriodo = document.getElementById("texto-periodo");
+const campoBuscar = document.getElementById("campo-buscar");
+const cuerpoTablaEstudiantes = document.getElementById("cuerpo-tabla-estudiantes");
+const textoSinResultados = document.getElementById("texto-sin-resultados");
+
+const tituloFormulario = document.getElementById("titulo-formulario");
+const formularioEstudiante = document.getElementById("formulario-estudiante");
+const campoEstudianteId = document.getElementById("estudiante-id");
+const campoNombres = document.getElementById("estudiante-nombres");
+const campoApellidos = document.getElementById("estudiante-apellidos");
+const campoCuenta = document.getElementById("estudiante-cuenta");
+const campoCorreo = document.getElementById("estudiante-correo");
+const campoTelefono = document.getElementById("estudiante-telefono");
+const campoNacimiento = document.getElementById("estudiante-nacimiento");
+const campoCarrera = document.getElementById("estudiante-carrera");
+const campoEstado = document.getElementById("estudiante-estado");
+const botonGuardarEstudiante = document.getElementById("boton-guardar-estudiante");
+const botonCancelarEdicion = document.getElementById("boton-cancelar-edicion");
+const mensajeFormulario = document.getElementById("mensaje-formulario");
+
+let usuarioActual = null;
+let temporizadorBusqueda = null;
+async function apiFetch(url, opciones = {}) {
+  const token =
+    usuarioActual?.access_token ||
+    localStorage.getItem("token_academico");
+
+  const encabezados = new Headers(opciones.headers || {});
+
+  if (token) {
+    encabezados.set("Authorization", `Bearer ${token}`);
+  }
+
+  return fetch(url, {
+    ...opciones,
+    headers: encabezados,
+  });
+}
+const TARJETAS_KPI = [
+  { clave: "estudiantes_activos", etiqueta: "Estudiantes activos" },
+  { clave: "docentes_activos", etiqueta: "Docentes activos" },
+  { clave: "carreras_activas", etiqueta: "Carreras activas" },
+  { clave: "asignaturas_activas", etiqueta: "Asignaturas activas" },
+  { clave: "secciones_abiertas", etiqueta: "Secciones abiertas" },
+  { clave: "matriculas_activas", etiqueta: "MatrÃƒÂ­culas activas" },
+];
+
+// ------------------------- AutenticaciÃƒÂ³n -------------------------
+
+formularioLogin.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  mensajeLogin.textContent = "";
+  botonEntrar.disabled = true;
+  botonEntrar.textContent = "Entrando...";
+
+  try {
+    const respuesta = await fetch(`${URL_BASE_API}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        usuario: campoUsuario.value.trim(),
+        clave: campoClave.value,
+      }),
+    });
+
+    if (!respuesta.ok) {
+      mensajeLogin.textContent =
+        respuesta.status === 401
+          ? "Usuario o contraseÃƒÂ±a incorrectos."
+          : "No se pudo iniciar sesiÃ³n.";
+      return;
+    }
+
+    usuarioActual = await respuesta.json();
+    localStorage.setItem(
+  "token_academico",
+  usuarioActual.access_token
+);
+
+    mostrarDashboard();
+  } catch (error) {
+    mensajeLogin.textContent =
+      "No se pudo conectar con la API. EstÃ¡Â¡ corriendo uvicorn?";
+  } finally {
+    botonEntrar.disabled = false;
+    botonEntrar.textContent = "Iniciar sesiÃ³n";
+  }
+});
+// Token conservado durante la sesi?n.
+
+botonSalir.addEventListener("click", () => {
+  usuarioActual = null;
+  formularioLogin.reset();
+  vistaDashboard.classList.add("oculto");
+  vistaLogin.classList.remove("oculto");
+});
+
+// ------------------------- Dashboard -------------------------
+
+
+
+function mostrarDashboard() {
+  vistaLogin.classList.add("oculto");
+  vistaDashboard.classList.remove("oculto");
+
+  const nombre = usuarioActual?.nombre_completo ?? "Usuario";
+  const rol = usuarioActual?.rol;
+  const esAdmin = rol === "ADMIN";
+  const esDocente = rol === "DOCENTE";
+  const esEstudiante = rol === "ESTUDIANTE";
+
+  tituloBienvenida.textContent = `Hola, ${nombre}`;
+
+  const navegacionModulos = document.querySelector(".navegacion-modulos");
+
+  if (navegacionModulos) {
+    navegacionModulos.classList.toggle("oculto", esEstudiante);
+  }
+
+  moduloEstudiantes.classList.toggle("oculto", !esAdmin);
+  moduloDocentes.classList.toggle("oculto", !esAdmin);
+
+  const moduloAsignaturas = document.getElementById("modulo-asignaturas");
+  const moduloCalificaciones = document.getElementById("modulo-calificaciones");
+
+  if (moduloAsignaturas) {
+    moduloAsignaturas.classList.toggle("oculto", !esAdmin);
+  }
+
+  if (moduloCalificaciones) {
+    moduloCalificaciones.classList.toggle(
+      "oculto",
+      !(esAdmin || esDocente || esEstudiante)
+    );
+  }
+
+  if (esAdmin) {
+    moduloActual = "estudiantes";
+
+    botonesModulos.forEach((boton) => {
+      const seleccionado = boton.dataset.modulo === "estudiantes";
+      boton.classList.toggle("activo", seleccionado);
+      boton.setAttribute("aria-pressed", String(seleccionado));
+    });
+
+    construirTarjetasVacias();
+    cargarDashboard();
+    cargarCarreras();
+    cargarEstudiantes();
+  } else if (esDocente || esEstudiante) {
+    moduloActual = esEstudiante ? "mi-academico" : "calificaciones";
+
+    filaTarjetas.innerHTML = "";
+
+    textoPeriodo.textContent = esDocente
+      ? "Consulta las calificaciones de tus secciones."
+      : "Consulta tus calificaciones acadÃƒÂ©micas.";
+
+    if (moduloCalificaciones) moduloCalificaciones.classList.toggle("oculto", esEstudiante);
+    const miAcademico = document.getElementById("modulo-mi-academico");
+    if (miAcademico) miAcademico.classList.toggle("oculto", !esEstudiante);
+    if (esEstudiante) cargarMiHistorial(); else cargarCalificaciones();
+  } else {
+    filaTarjetas.innerHTML = "";
+    textoPeriodo.textContent = "El rol de usuario no es vÃƒÂ¡lido.";
+  }
+}
+
+
+function construirTarjetasVacias() {
+  filaTarjetas.innerHTML = "";
+  TARJETAS_KPI.forEach(({ clave, etiqueta }) => {
+    const tarjeta = document.createElement("article");
+    tarjeta.className = "tarjeta-kpi";
+    tarjeta.innerHTML = `
+      <div class="valor" data-kpi="${clave}">Ã¢â‚¬â€</div>
+      <div class="etiqueta-kpi">${etiqueta}</div>
+    `;
+    filaTarjetas.appendChild(tarjeta);
+  });
+}
+
+async function cargarDashboard() {
+  try {
+    const respuesta = await fetch(`${URL_BASE_API}/reportes/dashboard`);
+    if (!respuesta.ok) throw new Error("dashboard no disponible");
+    const resumen = await respuesta.json();
+
+    TARJETAS_KPI.forEach(({ clave }) => {
+      const nodo = filaTarjetas.querySelector(`[data-kpi="${clave}"]`);
+      if (nodo) nodo.textContent = resumen[clave] ?? "Ã¢â‚¬â€";
+    });
+
+    textoPeriodo.textContent = resumen.periodo_activo
+      ? `PerÃƒÂ­odo acadÃƒÂ©mico activo: ${resumen.periodo_activo}`
+      : "No hay un perÃƒÂ­odo acadÃƒÂ©mico activo.";
+  } catch (error) {
+    textoPeriodo.textContent = "No se pudieron cargar los indicadores.";
+  }
+}
+
+
+// GUARDAR_ESTUDIANTE_FIX
+formularioEstudiante.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  if (usuarioActual?.rol !== "ADMIN") { alert("Solo ADMIN puede guardar estudiantes."); return; }
+  mensajeFormulario.textContent = "";
+  botonGuardarEstudiante.disabled = true;
+  try {
+    const datos = {
+      cuenta: campoCuenta.value.trim(),
+      nombres: campoNombres.value.trim(),
+      apellidos: campoApellidos.value.trim(),
+      correo: campoCorreo.value.trim(),
+      telefono: campoTelefono.value.trim() || null,
+      fecha_nacimiento: campoNacimiento.value,
+      carrera_id: Number(campoCarrera.value),
+      estado: campoEstado.value
+    };
+    const respuesta = await apiFetch(`${URL_BASE_API}/estudiantes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(datos)
+    });
+    const resultado = await respuesta.json();
+    if (!respuesta.ok) {
+      mensajeFormulario.textContent = "Error " + respuesta.status + ": " +
+        (typeof resultado.detail === "string" ? resultado.detail : JSON.stringify(resultado.detail));
+      return;
+    }
+    formularioEstudiante.reset();
+    mensajeFormulario.textContent = "Estudiante guardado. Usuario: " +
+      resultado.usuario + (resultado.clave_temporal ? " | Clave temporal: " + resultado.clave_temporal : "");
+    await cargarEstudiantes();
+  } catch (error) {
+    console.error(error);
+    mensajeFormulario.textContent = "Error de conexiÃ³n con la API.";
+  } finally {
+    botonGuardarEstudiante.disabled = false;
+  }
+});
+// ------------------------- Carreras -------------------------
+
+async function cargarCarreras() {
+  try {
+    const respuesta = await fetch(
+      `${URL_BASE_API}/carreras?solo_activas=true`
+    );
+
+    if (!respuesta.ok) {
+      throw new Error("No se pudieron cargar las carreras.");
+    }
+
+    const carreras = await respuesta.json();
+
+    // Selector del formulario de estudiantes
+    const campoCarreraEstudiante = document.getElementById(
+      "estudiante-carrera"
+    );
+
+    // Selector del formulario de asignaturas
+    const campoCarreraAsignatura = document.getElementById(
+      "asignatura-carrera"
+    );
+
+    const selectores = [
+      {
+        campo: campoCarreraEstudiante,
+        textoInicial: "Seleccione una carrera",
+      },
+      {
+        campo: campoCarreraAsignatura,
+        textoInicial: "Seleccione una carrera",
+      },
+    ];
+
+    selectores.forEach(({ campo, textoInicial }) => {
+      if (!campo) return;
+
+      campo.replaceChildren();
+
+      const opcionInicial = document.createElement("option");
+      opcionInicial.value = "";
+      opcionInicial.textContent = textoInicial;
+      campo.appendChild(opcionInicial);
+
+      carreras.forEach((carrera) => {
+        const opcion = document.createElement("option");
+        opcion.value = carrera.id;
+        opcion.textContent = `${carrera.codigo} - ${carrera.nombre}`;
+        campo.appendChild(opcion);
+      });
+    });
+  } catch (error) {
+    console.error("Error al cargar las carreras:", error);
+
+    const campoCarreraEstudiante = document.getElementById(
+      "estudiante-carrera"
+    );
+
+    const campoCarreraAsignatura = document.getElementById(
+      "asignatura-carrera"
+    );
+
+    [campoCarreraEstudiante, campoCarreraAsignatura].forEach((campo) => {
+      if (!campo) return;
+
+      campo.replaceChildren();
+
+      const opcion = document.createElement("option");
+      opcion.value = "";
+      opcion.textContent = "No se pudieron cargar las carreras";
+      campo.appendChild(opcion);
+    });
+  }
+}
+
+// ------------------------- Listado de estudiantes -------------------------
+
+async function cargarEstudiantes(buscar = "") {
+  try {
+    const parametros = buscar ? `?buscar=${encodeURIComponent(buscar)}` : "";
+    const respuesta = await fetch(`${URL_BASE_API}/estudiantes${parametros}`);
+    if (!respuesta.ok) throw new Error("estudiantes no disponible");
+    const estudiantes = await respuesta.json();
+    renderizarTablaEstudiantes(estudiantes);
+  } catch (error) {
+    cuerpoTablaEstudiantes.innerHTML = "";
+    textoSinResultados.textContent = "No se pudo cargar la lista de estudiantes.";
+    textoSinResultados.classList.remove("oculto");
+  }
+}
+
+function renderizarTablaEstudiantes(estudiantes) {
+  cuerpoTablaEstudiantes.innerHTML = "";
+
+  if (estudiantes.length === 0) {
+    textoSinResultados.textContent = "No se encontraron estudiantes con ese criterio.";
+    textoSinResultados.classList.remove("oculto");
+    return;
+  }
+  textoSinResultados.classList.add("oculto");
+
+  estudiantes.forEach((estudiante) => {
+    const fila = document.createElement("tr");
+    fila.innerHTML = `
+      <td>${estudiante.cuenta}</td>
+      <td>${estudiante.nombres} ${estudiante.apellidos}</td>
+      <td>${estudiante.correo}</td>
+      <td>${estudiante.carrera_nombre}</td>
+      <td>${pastillaEstado(estudiante.estado)}</td>
+      <td class="acciones-fila">
+        <button type="button" class="boton-icono" data-accion="editar">Editar</button>
+        <button type="button" class="boton-icono peligro" data-accion="eliminar">Eliminar</button>
+      </td>
+    `;
+    fila.querySelector('[data-accion="editar"]').addEventListener("click", () =>
+      editarEstudiante(estudiante)
+    );
+    fila.querySelector('[data-accion="eliminar"]').addEventListener("click", () =>
+      eliminarEstudiante(estudiante)
+    );
+    cuerpoTablaEstudiantes.appendChild(fila);
+  });
+}
+
+function pastillaEstado(estado) {
+  if (estado === "ACTIVO") {
+    return `<span class="pastilla-estado pastilla-activo">Activo</span>`;
+  }
+  const etiquetas = { INACTIVO: "Inactivo", GRADUADO: "Graduado" };
+  return `<span class="pastilla-estado pastilla-neutral">${etiquetas[estado] ?? estado}</span>`;
+}
+
+campoBuscar.addEventListener("input", () => {
+  clearTimeout(temporizadorBusqueda);
+  temporizadorBusqueda = setTimeout(() => {
+    cargarEstudiantes(campoBuscar.value.trim());
+  }, 300);
+});
+ 
+
+/* =============== NAVEGACIÃƒâ€œN DE MÃƒâ€œDULOS =============== */
+const botonesModulos = document.querySelectorAll(".boton-modulo");
+const moduloEstudiantes = document.getElementById("modulo-estudiantes");
+const moduloDocentes = document.getElementById("modulo-docentes");
+const moduloAsignaturas = document.getElementById("modulo-asignaturas");
+const moduloCalificaciones = document.getElementById("modulo-calificaciones");
+
+let moduloActual = "estudiantes";
+let temporizadorBusquedaDocente = null;
+
+botonesModulos.forEach((boton) => {
+  boton.addEventListener("click", () => {
+    moduloActual = boton.dataset.modulo;
+
+    botonesModulos.forEach((item) => {
+      const seleccionado = item === boton;
+      item.classList.toggle("activo", seleccionado);
+      item.setAttribute("aria-pressed", String(seleccionado));
+    });
+
+    moduloEstudiantes.classList.toggle(
+      "oculto", usuarioActual?.rol !== "ADMIN" || moduloActual !== "estudiantes"
+    );
+
+    moduloDocentes.classList.toggle(
+      "oculto", usuarioActual?.rol !== "ADMIN" || moduloActual !== "docentes"
+    );
+
+    moduloAsignaturas.classList.toggle(
+      "oculto", moduloActual !== "asignaturas"
+    );
+
+    moduloCalificaciones.classList.toggle(
+      "oculto", moduloActual !== "calificaciones"
+    );
+
+    if (moduloActual === "estudiantes") {
+      cargarEstudiantes(campoBuscar.value.trim());
+    }
+
+    if (moduloActual === "docentes") {
+      cargarDocentes(campoBuscarDocente.value.trim());
+    }
+  });
+});
+
+
+
+/* =================== REFERENCIAS DOCENTES =================== */
+
+const formularioDocente = document.getElementById("formulario-docente");
+const campoDocenteId = document.getElementById("docente-id");
+const campoDocenteNumero = document.getElementById("docente-numero");
+const campoDocenteNombres = document.getElementById("docente-nombres");
+const campoDocenteApellidos = document.getElementById("docente-apellidos");
+const campoDocenteCorreo = document.getElementById("docente-correo");
+const campoDocenteEspecialidad = document.getElementById("docente-especialidad");
+const campoDocenteEstado = document.getElementById("docente-estado");
+
+const tituloFormularioDocente =
+  document.getElementById("titulo-formulario-docente");
+const botonGuardarDocente =
+  document.getElementById("boton-guardar-docente");
+const botonCancelarDocente =
+  document.getElementById("boton-cancelar-docente");
+const mensajeFormularioDocente =
+  document.getElementById("mensaje-formulario-docente");
+const campoBuscarDocente =
+  document.getElementById("campo-buscar-docente");
+const cuerpoTablaDocentes =
+  document.getElementById("cuerpo-tabla-docentes");
+const textoSinDocentes =
+  document.getElementById("texto-sin-docentes");
+
+
+/* ================== LISTAR DOCENTES ================== */
+
+async function cargarDocentes(buscar = "") {
+  try {
+    const parametros = buscar
+      ? `?buscar=${encodeURIComponent(buscar)}`
+      : "";
+
+    const respuesta = await fetch(
+      `${URL_BASE_API}/docentes${parametros}`
+    );
+
+    if (!respuesta.ok) {
+      throw new Error("No se pudieron cargar los docentes");
+    }
+
+    const docentes = await respuesta.json();
+    renderizarTablaDocentes(docentes);
+  } catch (error) {
+    cuerpoTablaDocentes.innerHTML = "";
+    textoSinDocentes.textContent =
+      "No se pudo cargar la lista. Verifique que la API estÃƒÂ© funcionando.";
+    textoSinDocentes.classList.remove("oculto");
+  }
+}
+
+
+/* ================== DIBUJAR TABLA ================== */
+
+function renderizarTablaDocentes(docentes) {
+  cuerpoTablaDocentes.innerHTML = "";
+
+  if (docentes.length === 0) {
+    textoSinDocentes.textContent = "No hay docentes para mostrar.";
+    textoSinDocentes.classList.remove("oculto");
+    return;
+  }
+
+  textoSinDocentes.classList.add("oculto");
+
+  docentes.forEach((docente) => {
+    const fila = document.createElement("tr");
+
+    // Usar textContent evita interpretar los datos como HTML.
+    const valores = [
+      docente.numero_empleado,
+      `${docente.nombres} ${docente.apellidos}`,
+      docente.correo,
+      docente.especialidad,
+    ];
+
+    valores.forEach((valor) => {
+      const celda = document.createElement("td");
+      celda.textContent = valor ?? "";
+      fila.appendChild(celda);
+    });
+
+    const celdaEstado = document.createElement("td");
+    celdaEstado.innerHTML = pastillaEstado(docente.estado);
+    fila.appendChild(celdaEstado);
+
+    const celdaAcciones = document.createElement("td");
+    celdaAcciones.className = "acciones-fila";
+
+    const botonEditar = document.createElement("button");
+    botonEditar.type = "button";
+    botonEditar.className = "boton-icono";
+    botonEditar.textContent = "Editar";
+    botonEditar.addEventListener("click", () => editarDocente(docente));
+
+    const botonEliminar = document.createElement("button");
+    botonEliminar.type = "button";
+    botonEliminar.className = "boton-icono peligro";
+    botonEliminar.textContent = "Eliminar";
+    botonEliminar.addEventListener("click", () => eliminarDocente(docente));
+
+    celdaAcciones.append(botonEditar, botonEliminar);
+    fila.appendChild(celdaAcciones);
+    cuerpoTablaDocentes.appendChild(fila);
+  });
+}
+
+
+/* ================= CREAR / EDITAR DOCENTE ================= */
+
+formularioDocente.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  if (usuarioActual?.rol !== "ADMIN") { alert("Solo ADMIN puede guardar docentes."); return; }
+
+  mensajeFormularioDocente.textContent = "";
+  mensajeFormularioDocente.className = "mensaje-error";
+
+  const datos = {
+    numero_empleado: campoDocenteNumero.value.trim(),
+    nombres: campoDocenteNombres.value.trim(),
+    apellidos: campoDocenteApellidos.value.trim(),
+    correo: campoDocenteCorreo.value.trim(),
+    especialidad: campoDocenteEspecialidad.value.trim(),
+    estado: campoDocenteEstado.value,
+  };
+
+  const id = campoDocenteId.value;
+  const esEdicion = Boolean(id);
+
+  botonGuardarDocente.disabled = true;
+  botonGuardarDocente.textContent = "Guardando...";
+
+  try {
+    const respuesta = await fetch(
+      `${URL_BASE_API}/docentes${esEdicion ? `/${id}` : ""}`,
+      {
+        method: esEdicion ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos),
+      }
+    );
+
+    if (!respuesta.ok) {
+      const detalle = await respuesta.json().catch(() => null);
+      mensajeFormularioDocente.textContent =
+        detalle?.detail ?? "No se pudo guardar el docente.";
+      return;
+    }
+
+    
+const resultado = await respuesta.json();
+
+if (esEdicion) {
+  mensajeFormularioDocente.textContent =
+    "Docente actualizado correctamente.";
+} else {
+  mensajeFormularioDocente.textContent =
+    `Docente registrado correctamente.
+
+` +
+    `Usuario: ${resultado.usuario}
+` +
+    `ContraseÃƒÂ±a temporal: ${resultado.clave_temporal}
+
+` +
+    `Guarde estas credenciales para entregÃƒÂ¡rselas al docente.`;
+}
+
+mensajeFormularioDocente.className = "mensaje-exito";
+
+
+    cancelarEdicionDocente();
+    await cargarDocentes(campoBuscarDocente.value.trim());
+
+    // Actualiza el indicador de docentes activos.
+    await cargarDashboard();
+  } catch (error) {
+    mensajeFormularioDocente.textContent =
+      "No se pudo conectar con la API.";
+  } finally {
+    botonGuardarDocente.disabled = false;
+    botonGuardarDocente.textContent = "Guardar docente";
+  }
+});
+
+
+/* =================== EDITAR DOCENTE =================== */
+
+function editarDocente(docente) {
+  campoDocenteId.value = docente.id;
+  campoDocenteNumero.value = docente.numero_empleado;
+  campoDocenteNombres.value = docente.nombres;
+  campoDocenteApellidos.value = docente.apellidos;
+  campoDocenteCorreo.value = docente.correo;
+  campoDocenteEspecialidad.value = docente.especialidad;
+  campoDocenteEstado.value = docente.estado;
+
+  tituloFormularioDocente.textContent =
+    `Editar docente Ã¢â‚¬â€ ${docente.nombres} ${docente.apellidos}`;
+
+  botonGuardarDocente.textContent = "Guardar cambios";
+  botonCancelarDocente.classList.remove("oculto");
+  mensajeFormularioDocente.textContent = "";
+
+  formularioDocente.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
+
+/* ================= CANCELAR EDICIÃƒâ€œN ================= */
+
+function cancelarEdicionDocente() {
+  formularioDocente.reset();
+  campoDocenteId.value = "";
+  tituloFormularioDocente.textContent = "Nuevo docente";
+  botonGuardarDocente.textContent = "Guardar docente";
+  botonCancelarDocente.classList.add("oculto");
+}
+
+botonCancelarDocente.addEventListener(
+  "click",
+  cancelarEdicionDocente
+);
+
+
+/* =================== ELIMINAR DOCENTE =================== */
+
+async function eliminarDocente(docente) {
+  const confirmado = window.confirm(
+    `Ã‚Â¿Eliminar a ${docente.nombres} ${docente.apellidos}?`
+  );
+
+  if (!confirmado) return;
+
+  try {
+    const respuesta = await fetch(
+      `${URL_BASE_API}/docentes/${docente.id}`,
+      { method: "DELETE" }
+    );
+
+    if (!respuesta.ok) {
+      const detalle = await respuesta.json().catch(() => null);
+      window.alert(
+        detalle?.detail ?? "No se pudo eliminar el docente."
+      );
+      return;
+    }
+
+    await cargarDocentes(campoBuscarDocente.value.trim());
+    await cargarDashboard();
+  } catch (error) {
+    window.alert("No se pudo conectar con la API.");
+  }
+}
+
+
+/* ================= BUSCAR DOCENTES ================= */
+
+campoBuscarDocente.addEventListener("input", () => {
+  clearTimeout(temporizadorBusquedaDocente);
+
+  temporizadorBusquedaDocente = setTimeout(() => {
+    cargarDocentes(campoBuscarDocente.value.trim());
+  }, 300);
+});
+
+
+/* ============= ACTUALIZAR AMBOS MÃƒâ€œDULOS ============= */
+
+// Sustituye el listener anterior de botonActualizar por este
+// para que el botÃƒÂ³n Actualizar respete el mÃƒÂ³dulo seleccionado.
+botonActualizar.addEventListener("click", async () => {
+  try {
+    const moduloDocentes = document.getElementById("modulo-docentes");
+
+    if (moduloDocentes && !moduloDocentes.classList.contains("oculto")) {
+      await cargarDocentes();
+    } else {
+      await cargarDashboard();
+
+      const campoBuscar = document.getElementById("campo-buscar");
+
+      if (campoBuscar) {
+        await cargarEstudiantes(campoBuscar.value.trim());
+      } else {
+        await cargarEstudiantes("");
+      }
+    }
+
+    console.log("ActualizaciÃƒÂ³n completada.");
+  } catch (error) {
+    console.error("Error al actualizar:", error);
+    alert("OcurriÃƒÂ³ un error al actualizar. Presiona F12 y revisa la consola.");
+  }
+});
+
+/* ============== MÃƒâ€œDULO DE CALIFICACIONES ============== */
+
+async function cargarCalificaciones() {
+  const cuerpoTabla = document.getElementById("cuerpo-tabla-calificaciones");
+  const textoSinResultados = document.getElementById("texto-sin-calificaciones");
+  const textoAyuda = document.getElementById("texto-ayuda-calificaciones");
+  const contenedorTarjetas = document.getElementById("tarjetas-calificaciones");
+
+  if (!cuerpoTabla || !textoSinResultados) {
+    console.error("No se encontraron los elementos de calificaciones.");
+    return;
+  }
+
+  cuerpoTabla.replaceChildren();
+  textoSinResultados.classList.add("oculto");
+  if (contenedorTarjetas) contenedorTarjetas.replaceChildren();
+
+  const esDocente = usuarioActual?.rol === "DOCENTE";
+  const esAdmin = usuarioActual?.rol === "ADMIN";
+  const puedeEditar = esDocente || esAdmin;
+
+  if (textoAyuda) {
+    textoAyuda.textContent = puedeEditar
+      ? "Registra o edita los tres parciales. La nota final se calcula automÃ¡ticamente."
+      : "Consulta tus calificaciones y resultados acadÃ©micos.";
+  }
+
+  const mostrarNota = (valor) =>
+    valor == null || valor === "" ? "Pendiente" : Number(valor).toFixed(2);
+
+  const crearBoton = (texto, clase, accion) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = texto;
+    if (clase) boton.className = clase;
+    boton.addEventListener("click", accion);
+    return boton;
+  };
+
+  try {
+    const endpoint = puedeEditar
+      ? `${URL_BASE_API}/calificaciones/listado-docente`
+      : `${URL_BASE_API}/calificaciones`;
+
+    const respuesta = await apiFetch(endpoint);
+
+    if (!respuesta.ok) {
+      throw new Error(`No se pudieron cargar las calificaciones (${respuesta.status}).`);
+    }
+
+    const calificaciones = await respuesta.json();
+
+    if (!Array.isArray(calificaciones) || calificaciones.length === 0) {
+      textoSinResultados.textContent = esDocente
+        ? "No hay estudiantes matriculados en tus secciones asignadas."
+        : "No hay calificaciones registradas para mostrar.";
+      textoSinResultados.classList.remove("oculto");
+      return;
+    }
+
+    calificaciones.forEach((calificacion) => {
+      const fila = document.createElement("tr");
+
+      const celdaEstudiante = document.createElement("td");
+      celdaEstudiante.textContent = calificacion.estudiante || "Sin nombre";
+
+      const celdaAsignatura = document.createElement("td");
+      celdaAsignatura.textContent = calificacion.asignatura || "Sin asignatura";
+
+      const celdaPrimero = document.createElement("td");
+      const celdaSegundo = document.createElement("td");
+      const celdaTercero = document.createElement("td");
+      const celdaFinal = document.createElement("td");
+      const celdaResultado = document.createElement("td");
+      const celdaAcciones = document.createElement("td");
+
+      const celdasNotas = [celdaPrimero, celdaSegundo, celdaTercero];
+
+      const valoresIniciales = [
+        calificacion.primer_parcial,
+        calificacion.segundo_parcial,
+        calificacion.tercer_parcial
+      ];
+
+      const actualizarVista = () => {
+        celdasNotas.forEach((celda, indice) => {
+          celda.textContent = mostrarNota(valoresIniciales[indice]);
+        });
+
+        celdaFinal.textContent = mostrarNota(calificacion.nota_final);
+        celdaResultado.textContent = calificacion.resultado || "PENDIENTE";
+        celdaResultado.className =
+          calificacion.resultado === "APROBADA"
+            ? "estado estado-activo"
+            : calificacion.resultado === "REPROBADA"
+              ? "estado estado-inactivo"
+              : "";
+      };
+
+      actualizarVista();
+
+      if (puedeEditar && calificacion.matricula_id != null) {
+        const botonEditar = crearBoton(
+          calificacion.nota_final == null ? "Registrar notas" : "Editar",
+          "",
+          () => {
+            celdaAcciones.replaceChildren();
+
+            const entradas = valoresIniciales.map((valor, indice) => {
+              const entrada = document.createElement("input");
+              entrada.type = "number";
+              entrada.min = "0";
+              entrada.max = "100";
+              entrada.step = "0.01";
+              entrada.required = true;
+              entrada.value = valor == null ? "" : String(valor);
+              entrada.setAttribute(
+                "aria-label",
+                ["Primer parcial", "Segundo parcial", "Tercer parcial"][indice]
+              );
+              entrada.style.width = "90px";
+              entrada.style.maxWidth = "100%";
+              celdasNotas[indice].replaceChildren(entrada);
+              return entrada;
+            });
+
+            const botonGuardar = crearBoton("Guardar", "boton-principal", async () => {
+              const valores = entradas.map((entrada) => entrada.value.trim());
+
+              if (valores.some((valor) =>
+                valor === "" ||
+                !Number.isFinite(Number(valor)) ||
+                Number(valor) < 0 ||
+                Number(valor) > 100
+              )) {
+                alert("Ingresa los tres parciales con valores entre 0 y 100.");
+                return;
+              }
+
+              botonGuardar.disabled = true;
+
+              try {
+                const guardado = await apiFetch(
+                  `${URL_BASE_API}/calificaciones/matricula/${calificacion.matricula_id}`,
+                  {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      primer_parcial: Number(valores[0]),
+                      segundo_parcial: Number(valores[1]),
+                      tercer_parcial: Number(valores[2]),
+                      observacion: calificacion.observacion || null
+                    })
+                  }
+                );
+
+                const datos = await guardado.json().catch(() => ({}));
+
+                if (!guardado.ok) {
+                  throw new Error(datos.detail || `Error ${guardado.status}`);
+                }
+
+                alert("Calificaciones guardadas correctamente.");
+                await cargarCalificaciones();
+              } catch (error) {
+                alert(`No se pudieron guardar las notas: ${error.message}`);
+                botonGuardar.disabled = false;
+              }
+            });
+
+            const botonCancelar = crearBoton("Cancelar", "boton-secundario", () => {
+              actualizarVista();
+              celdaAcciones.replaceChildren();
+              celdaAcciones.appendChild(botonEditar);
+
+              if (calificacion.id != null) {
+                celdaAcciones.appendChild(document.createTextNode(" "));
+                celdaAcciones.appendChild(botonEliminar);
+              }
+            });
+
+            const botonEliminar = crearBoton(
+              "Eliminar",
+              "boton-secundario boton-peligro",
+              async () => {
+                if (!confirm(
+                  `Â¿Eliminar las calificaciones de ${calificacion.estudiante} en ${calificacion.asignatura}?`
+                )) return;
+
+                try {
+                  const eliminacion = await apiFetch(
+                    `${URL_BASE_API}/calificaciones/matricula/${calificacion.matricula_id}`,
+                    { method: "DELETE" }
+                  );
+
+                  const datos = await eliminacion.json().catch(() => ({}));
+
+                  if (!eliminacion.ok) {
+                    throw new Error(datos.detail || `Error ${eliminacion.status}`);
+                  }
+
+                  alert("La calificaciÃ³n fue eliminada correctamente.");
+                  await cargarCalificaciones();
+                } catch (error) {
+                  alert(`No se pudo eliminar la nota: ${error.message}`);
+                }
+              }
+            );
+
+            celdaAcciones.replaceChildren(botonGuardar, botonCancelar);
+          }
+        );
+
+        celdaAcciones.appendChild(botonEditar);
+
+        if (calificacion.id != null) {
+          celdaAcciones.appendChild(document.createTextNode(" "));
+          const botonEliminar = crearBoton(
+            "Eliminar",
+            "boton-secundario boton-peligro",
+            async () => {
+              if (!confirm(
+                `Â¿Eliminar las calificaciones de ${calificacion.estudiante} en ${calificacion.asignatura}?`
+              )) return;
+
+              try {
+                const eliminacion = await apiFetch(
+                  `${URL_BASE_API}/calificaciones/matricula/${calificacion.matricula_id}`,
+                  { method: "DELETE" }
+                );
+                const datos = await eliminacion.json().catch(() => ({}));
+
+                if (!eliminacion.ok) {
+                  throw new Error(datos.detail || `Error ${eliminacion.status}`);
+                }
+
+                alert("La calificaciÃ³n fue eliminada correctamente.");
+                await cargarCalificaciones();
+              } catch (error) {
+                alert(`No se pudo eliminar la nota: ${error.message}`);
+              }
+            }
+          );
+          celdaAcciones.appendChild(botonEliminar);
+        }
+      } else {
+        celdaAcciones.textContent = "Consulta";
+      }
+
+      fila.append(
+        celdaEstudiante,
+        celdaAsignatura,
+        celdaPrimero,
+        celdaSegundo,
+        celdaTercero,
+        celdaFinal,
+        celdaResultado,
+        celdaAcciones
+      );
+
+      cuerpoTabla.appendChild(fila);
+    });
+  } catch (error) {
+    console.error("Error al cargar calificaciones:", error);
+    textoSinResultados.textContent =
+      `No se pudieron cargar las calificaciones: ${error.message}`;
+    textoSinResultados.classList.remove("oculto");
+  }
+}
+
+
+/* ============== ACTUALIZAR CALIFICACIONES ============== */
+
+const botonActualizarCalificaciones = document.getElementById(
+  "boton-actualizar-calificaciones"
+);
+
+if (botonActualizarCalificaciones) {
+  botonActualizarCalificaciones.addEventListener("click", () => {
+    cargarCalificaciones();
+  });
+}
+
+
+
+// =============== LISTADO DE ASIGNATURAS ===============
+
+async function cargarAsignaturas(buscar = '') {
+  const cuerpo = document.getElementById("cuerpo-tabla-asignaturas");
+  const mensaje = document.getElementById("texto-sin-asignaturas");
+
+  if (!cuerpo || !mensaje) return;
+
+  cuerpo.replaceChildren();
+  mensaje.textContent = "Cargando asignaturas...";
+  mensaje.classList.remove("oculto");
+
+  try {
+    const parametros = buscar
+      ? `?buscar=${encodeURIComponent(buscar)}`
+      : "";
+
+    const respuesta = await apiFetch(
+      `${URL_BASE_API}/asignaturas${parametros}`
+    );
+
+    if (!respuesta.ok) {
+      if (respuesta.status === 401) {
+        throw new Error("Tu sesi?n no est? activa. Inicia sesi?n nuevamente.");
+      }
+      if (respuesta.status === 403) {
+        throw new Error("No tienes permiso para consultar las asignaturas.");
+      }
+      throw new Error(`Error al consultar asignaturas (${respuesta.status}).`);
+    }
+
+    const asignaturas = await respuesta.json();
+    cuerpo.replaceChildren();
+
+    if (!asignaturas.length) {
+      mensaje.textContent = buscar
+        ? "No se encontraron asignaturas con ese criterio."
+        : "No hay asignaturas para mostrar.";
+      mensaje.classList.remove("oculto");
+      return;
+    }
+
+    mensaje.classList.add("oculto");
+
+    asignaturas.forEach((asignatura) => {
+      const fila = document.createElement("tr");
+
+      const valores = [
+        asignatura.codigo,
+        asignatura.nombre,
+        asignatura.carrera_nombre,
+        asignatura.unidades_valorativas,
+        Number(asignatura.activo) === 1 ? "Activa" : "Inactiva",
+        "?"
+      ];
+
+      valores.forEach((valor) => {
+        const celda = document.createElement("td");
+        celda.textContent = valor ?? "";
+        fila.appendChild(celda);
+      });
+
+      cuerpo.appendChild(fila);
+    });
+  } catch (error) {
+    cuerpo.replaceChildren();
+    mensaje.textContent = error.message ||
+      "No se pudo cargar la lista de asignaturas.";
+    mensaje.classList.remove("oculto");
+    console.error("Error al cargar asignaturas:", error);
+  }
+}
+
+// Cargar el listado al entrar en el m?dulo de Asignaturas.
+document.querySelectorAll('.boton-modulo[data-modulo="asignaturas"]')
+  .forEach((boton) => {
+    boton.addEventListener("click", () => {
+      cargarAsignaturas(
+        document.getElementById("campo-buscar-asignatura")?.value.trim() || ""
+      );
+    });
+  });
+
+// Buscar asignaturas mientras se escribe.
+const campoBuscarAsignatura = document.getElementById(
+  "campo-buscar-asignatura"
+);
+
+if (campoBuscarAsignatura) {
+  let temporizadorBusquedaAsignatura;
+
+  campoBuscarAsignatura.addEventListener("input", () => {
+    clearTimeout(temporizadorBusquedaAsignatura);
+    temporizadorBusquedaAsignatura = setTimeout(() => {
+      cargarAsignaturas(campoBuscarAsignatura.value.trim());
+    }, 300);
+  });
+}
+
+// =============== GUARDAR ASIGNATURAS ===============
+const formularioAsignatura = document.getElementById("formulario-asignatura");
+const mensajeFormularioAsignatura = document.getElementById("mensaje-formulario-asignatura");
+const botonGuardarAsignatura = document.getElementById("boton-guardar-asignatura");
+
+if (formularioAsignatura && mensajeFormularioAsignatura && botonGuardarAsignatura) {
+  formularioAsignatura.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+
+    const obtener = (id) => document.getElementById(id)?.value ?? "";
+    const datos = {
+      codigo: obtener("asignatura-codigo").trim(),
+      nombre: obtener("asignatura-nombre").trim(),
+      unidades_valorativas: Number(obtener("asignatura-unidades")),
+      carrera_id: Number(obtener("asignatura-carrera")),
+      requisito_id: obtener("asignatura-requisito")
+        ? Number(obtener("asignatura-requisito"))
+        : null,
+      activo: ["1", "true", "activo"].includes(
+        obtener("asignatura-activo").toLowerCase()
+      )
+    };
+
+    mensajeFormularioAsignatura.textContent = "";
+    mensajeFormularioAsignatura.className = "mensaje-error";
+
+    if (
+      !datos.codigo || !datos.nombre ||
+      !Number.isInteger(datos.unidades_valorativas) ||
+      datos.unidades_valorativas < 1 ||
+      datos.unidades_valorativas > 8 ||
+      !Number.isInteger(datos.carrera_id) ||
+      datos.carrera_id <= 0
+    ) {
+      mensajeFormularioAsignatura.textContent =
+        "Completa los campos y selecciona una carrera vÃƒÂ¡lida.";
+      return;
+    }
+
+    botonGuardarAsignatura.disabled = true;
+    const textoOriginal = botonGuardarAsignatura.textContent;
+    botonGuardarAsignatura.textContent = "Guardando...";
+
+    try {
+      const respuesta = await apiFetch(`${URL_BASE_API}/asignaturas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+      });
+
+      if (!respuesta.ok) {
+        const error = await respuesta.json().catch(() => ({}));
+        const detalle = Array.isArray(error.detail)
+          ? error.detail.map((item) => item.msg).join(", ")
+          : error.detail;
+
+        mensajeFormularioAsignatura.textContent =
+          respuesta.status === 401
+            ? "La sesiÃƒÂ³n no estÃƒÂ¡ activa. Inicia sesiÃƒÂ³n nuevamente."
+            : respuesta.status === 403
+              ? "Tu usuario no tiene permiso ADMIN para crear asignaturas."
+              : detalle || `Error al guardar (HTTP ${respuesta.status}).`;
+        return;
+      }
+
+      mensajeFormularioAsignatura.textContent =
+        "Asignatura registrada correctamente.";
+      mensajeFormularioAsignatura.className = "mensaje-exito";
+
+      formularioAsignatura.reset();
+
+      const id = document.getElementById("asignatura-id");
+      if (id) id.value = "";
+
+      await cargarAsignaturas(
+        document.getElementById("campo-buscar-asignatura")?.value.trim() || ""
+      );
+    } catch (error) {
+      console.error("Error al guardar asignatura:", error);
+      mensajeFormularioAsignatura.textContent =
+        "No se pudo conectar con la API. Comprueba que estÃƒÂ© iniciada.";
+    } finally {
+      botonGuardarAsignatura.disabled = false;
+      botonGuardarAsignatura.textContent = textoOriginal || "Guardar asignatura";
+    }
+  });
+}
+
+
+
+
+
+// ============== MÃ“DULOS COMPLEMENTARIOS E HISTORIAL ==============
+const MODULOS_VISIBLES = ["estudiantes", "docentes", "asignaturas", "calificaciones", "matriculas", "secciones", "periodos", "carreras", "aulas", "mi-academico"];
+function mostrarModuloCompleto(nombre) {
+  MODULOS_VISIBLES.forEach((id) => { const el=document.getElementById(`modulo-${id}`); if(el) el.classList.toggle("oculto", id !== nombre); });
+  document.querySelectorAll(".boton-modulo").forEach((b)=>{const active=b.dataset.modulo===nombre;b.classList.toggle("activo",active);b.setAttribute("aria-pressed",String(active));});
+  moduloActual=nombre;
+  if (nombre === "matriculas") cargarTablaGenerica("matriculas");
+  if (nombre === "secciones") cargarTablaGenerica("secciones");
+  if (nombre === "periodos") cargarTablaGenerica("periodos");
+  if (nombre === "carreras") cargarTablaGenerica("carreras");
+  if (nombre === "aulas") cargarTablaGenerica("aulas");
+  if (nombre === "calificaciones") cargarCalificaciones();
+  if (nombre === "mi-academico") cargarMiHistorial();
+}
+document.querySelectorAll(".boton-modulo").forEach((b)=>b.addEventListener("click",()=>mostrarModuloCompleto(b.dataset.modulo)));
+document.querySelectorAll("[data-recargar]").forEach((b)=>b.addEventListener("click",()=>cargarTablaGenerica(b.dataset.recargar)));
+const botonHistorial=document.getElementById("boton-actualizar-historial"); if(botonHistorial) botonHistorial.addEventListener("click",cargarMiHistorial);
+function celda(texto){const td=document.createElement("td");td.textContent=texto ?? "â€”";return td;}
+async function cargarTablaGenerica(tipo){
+ const configs={
+  matriculas:{url:"/matriculas",tbody:"tabla-matriculas",empty:"vacio-matriculas",cols:r=>[r.estudiante_cuenta,r.estudiante_nombre,r.asignatura_nombre,r.seccion_codigo,r.periodo_nombre,r.fecha_matricula,r.estado]},
+  secciones:{url:"/secciones",tbody:"tabla-secciones",empty:"vacio-secciones",cols:r=>[r.codigo,r.asignatura_nombre,r.docente_nombre,r.periodo_nombre,`${r.dias} ${r.hora_inicio}-${r.hora_fin}`,`${r.matriculados ?? 0}/${r.cupo_maximo}`,r.estado]},
+  periodos:{url:"/periodos",tbody:"tabla-periodos",empty:"vacio-periodos",cols:r=>[r.anio,`PerÃ­odo ${r.numero}`,r.fecha_inicio,r.fecha_fin,r.activo ? "Activo":"Inactivo"],fields:[['anio','AÃ±o',2026],['numero','NÃºmero de perÃ­odo (1-3)',1],['fecha_inicio','Fecha de inicio (AAAA-MM-DD)','2026-01-01'],['fecha_fin','Fecha de fin (AAAA-MM-DD)','2026-04-30']],payload:v=>({anio:Number(v[0]),numero:Number(v[1]),fecha_inicio:v[2],fecha_fin:v[3],activo:confirm('Â¿Dejar este perÃ­odo activo?')})},
+  carreras:{url:"/carreras",tbody:"tabla-carreras",empty:"vacio-carreras",cols:r=>[r.codigo,r.nombre,`${r.duracion_anios} aÃ±os`,r.activo ? "Activa":"Inactiva"],fields:[['codigo','CÃ³digo','IS'],['nombre','Nombre de la carrera','IngenierÃ­a en Sistemas'],['duracion_anios','DuraciÃ³n en aÃ±os','5']],payload:v=>({codigo:v[0].trim(),nombre:v[1].trim(),duracion_anios:Number(v[2]),activo:confirm('Â¿Dejar esta carrera activa?')})},
+  aulas:{url:"/aulas",tbody:"tabla-aulas",empty:"vacio-aulas",cols:r=>[r.codigo,r.edificio,r.capacidad,r.activo ? "Activa":"Inactiva"],fields:[['codigo','CÃ³digo del aula','A-101'],['edificio','Edificio','Edificio A'],['capacidad','Capacidad','30']],payload:v=>({codigo:v[0].trim(),edificio:v[1].trim(),capacidad:Number(v[2]),activo:confirm('Â¿Dejar esta aula activa?')})}
+ };
+ const cfg=configs[tipo]; if(!cfg)return; const tbody=document.getElementById(cfg.tbody), empty=document.getElementById(cfg.empty); if(!tbody||!empty)return; tbody.replaceChildren();
+ try{const res=await apiFetch(`${URL_BASE_API}${cfg.url}`);if(!res.ok)throw new Error(`Error ${res.status}`);const rows=await res.json();rows.forEach(r=>{const tr=document.createElement("tr");cfg.cols(r).forEach(v=>tr.appendChild(celda(v)));if(["carreras","aulas","periodos"].includes(tipo)&&usuarioActual?.rol==="ADMIN"){
+   const td=document.createElement('td'); const edit=document.createElement('button');edit.type='button';edit.className='boton-secundario';edit.textContent='Editar';edit.addEventListener('click',()=>editarRegistro(tipo,r,cfg));td.appendChild(edit);
+   const del=document.createElement('button');del.type='button';del.className='boton-secundario';del.textContent='Eliminar';del.style.marginLeft='6px';del.addEventListener('click',()=>eliminarRegistro(tipo,r,cfg));td.appendChild(del);tr.appendChild(td);
+  }tbody.appendChild(tr)});empty.classList.toggle("oculto",rows.length>0);}
+ catch(e){empty.textContent=`No se pudo cargar el mÃ³dulo: ${e.message}.`;empty.classList.remove("oculto");}
+}
+function valoresRegistro(tipo,r){if(tipo==='carreras')return [r.codigo,r.nombre,r.duracion_anios];if(tipo==='aulas')return [r.codigo,r.edificio,r.capacidad];return [r.anio,r.numero,r.fecha_inicio,r.fecha_fin];}
+async function editarRegistro(tipo,r,cfg){
+ const labels=cfg.fields.map(f=>f[1]);const actual=valoresRegistro(tipo,r);const vals=[];
+ for(let i=0;i<labels.length;i++){const v=prompt(`Editar ${labels[i]}:`,actual[i]??'');if(v===null)return;if(!v.trim())return alert('Todos los campos son obligatorios.');vals.push(v.trim());}
+ try{const resp=await apiFetch(`${URL_BASE_API}${cfg.url}/${r.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg.payload(vals))});const data=await resp.json();if(!resp.ok)throw new Error(data.detail||'No se pudo actualizar');alert('Registro actualizado correctamente.');await cargarTablaGenerica(tipo);}catch(e){alert(e.message);}
+}
+async function eliminarRegistro(tipo,r,cfg){if(!confirm(`Â¿Seguro que deseas eliminar este registro? Esta acciÃ³n puede ser bloqueada si existen datos relacionados.`))return;try{const resp=await apiFetch(`${URL_BASE_API}${cfg.url}/${r.id}`,{method:'DELETE'});const data=await resp.json();if(!resp.ok)throw new Error(data.detail||'No se pudo eliminar');alert(data.mensaje||'Registro eliminado.');await cargarTablaGenerica(tipo);}catch(e){alert(e.message);}}
+async function agregarRegistro(tipo){
+ const cfg={
+  periodos:{url:'/periodos',fields:[['AÃ±o','2026'],['NÃºmero de perÃ­odo (1-3)','1'],['Fecha de inicio (AAAA-MM-DD)','2026-01-01'],['Fecha de fin (AAAA-MM-DD)','2026-04-30']],payload:v=>({anio:Number(v[0]),numero:Number(v[1]),fecha_inicio:v[2],fecha_fin:v[3],activo:confirm('Â¿Dejar este perÃ­odo activo?')})},
+  carreras:{url:'/carreras',fields:[['CÃ³digo','IS'],['Nombre de la carrera','IngenierÃ­a en Sistemas'],['DuraciÃ³n en aÃ±os','5']],payload:v=>({codigo:v[0].trim(),nombre:v[1].trim(),duracion_anios:Number(v[2]),activo:confirm('Â¿Dejar esta carrera activa?')})},
+  aulas:{url:'/aulas',fields:[['CÃ³digo del aula','A-101'],['Edificio','Edificio A'],['Capacidad','30']],payload:v=>({codigo:v[0].trim(),edificio:v[1].trim(),capacidad:Number(v[2]),activo:confirm('Â¿Dejar esta aula activa?')})}
+ }[tipo];if(!cfg||usuarioActual?.rol!=='ADMIN')return alert('Solo el administrador puede crear estos registros.');const v=[];for(const f of cfg.fields){const x=prompt(f[0]+':',f[1]);if(x===null)return;if(!x.trim())return alert('Todos los campos son obligatorios.');v.push(x.trim());}try{const resp=await apiFetch(`${URL_BASE_API}${cfg.url}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg.payload(v))});const data=await resp.json();if(!resp.ok)throw new Error(data.detail||'No se pudo guardar');alert('Registro guardado correctamente.');await cargarTablaGenerica(tipo);}catch(e){alert(e.message);}}
+document.querySelectorAll('[data-agregar]').forEach(b=>b.addEventListener('click',()=>agregarRegistro(b.dataset.agregar)));
+
+async function cargarMiHistorial(){
+ const tbody=document.getElementById("tabla-mi-historial"), empty=document.getElementById("vacio-mi-historial");if(!tbody||!empty)return;tbody.replaceChildren();
+ try{const res=await apiFetch(`${URL_BASE_API}/estudiantes/mi-historial`);if(!res.ok)throw new Error(`Error ${res.status}`);const rows=await res.json();rows.forEach(r=>{const tr=document.createElement("tr");[`${r.asignatura_codigo} Â· ${r.asignatura}`,r.seccion,r.periodo,r.docente,r.nota_final==null?"Pendiente":Number(r.nota_final).toFixed(2),r.resultado,r.estado_cursado].forEach(v=>tr.appendChild(celda(v)));tbody.appendChild(tr)});empty.textContent=rows.length?"":"TodavÃ­a no tienes matrÃ­culas registradas.";empty.classList.toggle("oculto",rows.length>0);}
+ catch(e){empty.textContent=`No se pudo cargar tu historial: ${e.message}.`;empty.classList.remove("oculto");}
+}
+
+
+
+

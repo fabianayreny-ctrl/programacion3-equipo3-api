@@ -1,0 +1,1114 @@
+/* ============================================================
+   Sistema AcadÃ©mico â€” estilos del frontend
+   Paleta y tokens siguiendo la guÃ­a de diseÃ±o de datos del curso:
+   superficies, tinta y colores de estado con roles fijos.
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+  --pagina:          #f9f9f7;
+  --superficie:      #fcfcfb;
+  --tinta-primaria:  #0b0b0b;
+  --tinta-secundaria:#52514e;
+  --tinta-tenue:      #898781;
+  --borde:           rgba(11, 11, 11, 0.10);
+  --linea:           #e1e0d9;
+
+  --acento:          #159947;
+  --acento-oscuro:   #0c7132;
+  --acento-suave:    #e5f7eb;
+
+  --estado-bueno:      #0ca30c;
+  --estado-bueno-fondo:#e6f6e6;
+  --estado-alerta:     #fab219;
+  --estado-critico:    #d03b3b;
+  --estado-critico-fondo:#fbe9e9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --pagina:          #0d0d0d;
+    --superficie:      #1a1a19;
+    --tinta-primaria:  #ffffff;
+    --tinta-secundaria:#c3c2b7;
+    --tinta-tenue:      #898781;
+    --borde:           rgba(255, 255, 255, 0.10);
+    --linea:           #2c2c2a;
+
+    --acento:          #3987e5;
+    --acento-oscuro:   #86b6ef;
+    --acento-suave:    #16233a;
+
+    --estado-bueno:      #0ca30c;
+    --estado-bueno-fondo:#123312;
+    --estado-alerta:     #fab219;
+    --estado-critico:    #e66767;
+    --estado-critico-fondo:#3a1a1a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--pagina);
+  color: var(--tinta-primaria);
+}
+
+.oculto { display: none !important; }
+
+.etiqueta {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--tinta-tenue);
+  margin: 0 0 6px;
+}
+
+h1 { margin: 0; font-size: 26px; font-weight: 700; }
+h2 { margin: 0; font-size: 18px; font-weight: 700; }
+
+/* ---------------------- Vista: login ---------------------- */
+
+.vista-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.tarjeta-login {
+  width: 100%;
+  max-width: 380px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  padding: 32px;
+  box-shadow: 0 8px 30px rgba(11, 11, 11, 0.08);
+}
+
+.subtitulo {
+  color: var(--tinta-secundaria);
+  margin: 0 0 24px;
+  font-size: 14px;
+}
+
+.tarjeta-login label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.tarjeta-login input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: var(--pagina);
+  color: var(--tinta-primaria);
+  font-size: 14px;
+}
+
+.tarjeta-login input:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-suave);
+}
+
+#boton-entrar {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: var(--acento);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+#boton-entrar:hover { background: var(--acento-oscuro); }
+#boton-entrar:disabled { opacity: 0.6; cursor: default; }
+
+.mensaje-error {
+  min-height: 18px;
+  color: var(--estado-critico);
+  font-size: 13px;
+  margin: 14px 0 0;
+}
+
+.ayuda-usuarios {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--linea);
+  font-size: 12px;
+  color: var(--tinta-tenue);
+}
+
+.ayuda-usuarios code {
+  background: var(--pagina);
+  border: 1px solid var(--borde);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+/* -------------------- Vista: dashboard -------------------- */
+
+.barra-superior {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 32px;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--linea);
+  flex-wrap: wrap;
+}
+
+.acciones-barra {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chip-usuario {
+  font-size: 13px;
+  color: var(--tinta-secundaria);
+  background: var(--pagina);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.boton-secundario {
+  padding: 8px 14px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: var(--superficie);
+  color: var(--tinta-primaria);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton-secundario:hover { border-color: var(--acento); color: var(--acento); }
+
+.contenido {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 32px 48px;
+}
+
+.fila-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 860px) {
+  .fila-tarjetas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .fila-tarjetas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.tarjeta-kpi {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 16px 14px;
+  text-align: left;
+}
+
+.tarjeta-kpi .valor {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: proportional-nums;
+}
+
+.tarjeta-kpi .etiqueta-kpi {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--tinta-secundaria);
+  line-height: 1.3;
+}
+
+.texto-periodo {
+  margin: 14px 2px 28px;
+  font-size: 13px;
+  color: var(--tinta-tenue);
+}
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.encabezado-tarjeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+#campo-buscar {
+  padding: 8px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: var(--pagina);
+  color: var(--tinta-primaria);
+  font-size: 13px;
+  min-width: 240px;
+}
+
+#campo-buscar:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-suave);
+}
+
+.contenedor-tabla { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+thead th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tinta-tenue);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0 10px 10px;
+  border-bottom: 1px solid var(--linea);
+}
+
+tbody td {
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--linea);
+  color: var(--tinta-primaria);
+}
+
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--pagina); }
+
+.pastilla-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pastilla-estado::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.pastilla-activo {
+  color: var(--estado-bueno);
+  background: var(--estado-bueno-fondo);
+}
+.pastilla-activo::before { background: var(--estado-bueno); }
+
+.pastilla-neutral {
+  color: var(--tinta-secundaria);
+  background: var(--pagina);
+  border: 1px solid var(--borde);
+}
+.pastilla-neutral::before { background: var(--tinta-tenue); }
+
+.texto-vacio {
+  text-align: center;
+  color: var(--tinta-tenue);
+  padding: 24px 0 4px;
+  font-size: 13px;
+}
+
+/* ------------------- Formulario de estudiante ------------------- */
+
+.tarjeta-formulario { margin-bottom: 20px; }
+
+.rejilla-formulario {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+}
+
+@media (max-width: 640px) {
+  .rejilla-formulario { grid-template-columns: 1fr; }
+}
+
+.campo label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.campo input,
+.campo select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: var(--pagina);
+  color: var(--tinta-primaria);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.campo input:focus,
+.campo select:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-suave);
+}
+
+.acciones-formulario {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+#boton-guardar-estudiante {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--acento);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#boton-guardar-estudiante:hover { background: var(--acento-oscuro); }
+#boton-guardar-estudiante:disabled { opacity: 0.6; cursor: default; }
+
+#mensaje-formulario {
+  margin: 12px 0 0;
+}
+
+.mensaje-exito {
+  color: var(--estado-bueno);
+  font-size: 13px;
+  margin: 12px 0 0;
+  min-height: 18px;
+}
+
+/* ------------------- Acciones en la tabla ------------------- */
+
+.acciones-fila {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.boton-icono {
+  padding: 5px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--tinta-secundaria);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton-icono:hover { border-color: var(--acento); color: var(--acento); }
+
+.boton-icono.peligro:hover {
+  border-color: var(--estado-critico);
+  color: var(--estado-critico);
+}
+
+/* ================= NAVEGACIÃ“N DE MÃ“DULOS ================= */
+
+.navegacion-modulos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 24px 0;
+  padding: 6px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+}
+
+.boton-modulo {
+  flex: 1;
+  min-width: 150px;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--tinta-secundaria);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.boton-modulo:hover {
+  background: var(--acento-suave);
+  color: var(--acento);
+}
+
+.boton-modulo.activo {
+  background: var(--acento);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(42, 120, 214, 0.2);
+}
+
+.boton-modulo:focus-visible {
+  outline: 3px solid var(--acento-suave);
+  outline-offset: 2px;
+}
+
+/* Espacio entre los formularios y las tablas */
+
+#modulo-estudiantes,
+#modulo-docentes {
+  min-width: 0;
+}
+
+#modulo-estudiantes .tarjeta-tabla,
+#modulo-docentes .tarjeta-tabla {
+  margin-top: 20px;
+}
+
+#campo-buscar-docente {
+  padding: 8px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: var(--pagina);
+  color: var(--tinta-primaria);
+  font-size: 13px;
+  min-width: 240px;
+}
+
+#campo-buscar-docente:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-suave);
+}
+
+#boton-guardar-docente {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--acento);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#boton-guardar-docente:hover {
+  background: var(--acento-oscuro);
+}
+
+#boton-guardar-docente:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 520px) {
+  .navegacion-modulos {
+    gap: 6px;
+  }
+
+  .boton-modulo {
+    min-width: 120px;
+    padding: 10px;
+  }
+
+  #campo-buscar-docente {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+/* ==========================================
+   LOGIN MODERNO - SISTEMA ACADÃ‰MICO
+========================================== */
+
+.vista-login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    position: relative;
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at 15% 20%,
+            rgba(56, 130, 246, 0.28),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 85% 80%,
+            rgba(139, 92, 246, 0.24),
+            transparent 35%
+        ),
+        linear-gradient(
+            135deg,
+            #0b1228 0%,
+            #142a50 55%,
+            #172554 100%
+        );
+}
+
+/* CÃ­rculos decorativos del fondo */
+
+.vista-login::before,
+.vista-login::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(2px);
+}
+
+.vista-login::before {
+    width: 280px;
+    height: 280px;
+    top: -100px;
+    right: -70px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    box-shadow:
+        0 0 0 35px rgba(255, 255, 255, 0.025),
+        0 0 0 70px rgba(255, 255, 255, 0.018);
+}
+
+.vista-login::after {
+    width: 220px;
+    height: 220px;
+    bottom: -100px;
+    left: -65px;
+    background: rgba(59, 130, 246, 0.12);
+}
+
+/* Contenedor del login */
+
+.vista-login .tarjeta-login {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 440px;
+    padding: 42px 36px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.30),
+        0 4px 15px rgba(0, 0, 0, 0.08);
+    animation: entradaLogin 0.65s ease both;
+}
+
+/* Encabezado */
+
+.vista-login .tarjeta-login h1 {
+    color: #14213d;
+    font-size: clamp(25px, 4vw, 32px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.2;
+    margin-bottom: 10px;
+}
+
+.vista-login .tarjeta-login p {
+    color: #64748b;
+    line-height: 1.6;
+}
+
+/* Etiquetas */
+
+.vista-login .tarjeta-login label {
+    display: block;
+    margin: 18px 0 8px;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* Campos de entrada */
+
+.vista-login .tarjeta-login input {
+    width: 100%;
+    min-height: 49px;
+    padding: 13px 15px;
+    border: 1px solid #dbe3ef;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 15px;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.vista-login .tarjeta-login input:focus {
+    background: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.13);
+}
+
+/* BotÃ³n de iniciar sesiÃ³n */
+
+.vista-login .tarjeta-login button[type="submit"] {
+    width: 100%;
+    min-height: 51px;
+    margin-top: 25px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #16a34a, #f97316);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease;
+}
+
+.vista-login .tarjeta-login button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(37, 99, 235, 0.32);
+    filter: brightness(1.08);
+}
+
+.vista-login .tarjeta-login button[type="submit"]:active {
+    transform: translateY(0);
+}
+
+/* Mensajes de validaciÃ³n */
+
+.vista-login .mensaje-error,
+.vista-login .error {
+    color: #dc2626;
+    font-size: 13px;
+}
+
+/* Entrada suave */
+
+@keyframes entradaLogin {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* AdaptaciÃ³n a telÃ©fonos */
+
+@media (max-width: 480px) {
+    .vista-login {
+        padding: 18px;
+    }
+
+    .vista-login .tarjeta-login {
+        padding: 32px 23px;
+        border-radius: 20px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vista-login .tarjeta-login {
+        animation: none;
+    }
+
+    .vista-login .tarjeta-login button,
+    .vista-login .tarjeta-login input {
+        transition: none;
+    }
+}
+
+/* =========================================
+   MEJORAS VISUALES DEL LOGIN
+========================================= */
+
+.vista-login .tarjeta-login {
+    max-width: 460px;
+    padding: 42px 38px 30px;
+    border-radius: 26px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* LÃ­nea decorativa superior */
+
+.vista-login .tarjeta-login::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(
+        90deg,
+        #16a34a,
+        #8b5cf6,
+        #06b6d4
+    );
+}
+
+/* Etiqueta del proyecto */
+
+.vista-login .tarjeta-login .etiqueta {
+    display: inline-block;
+    padding: 7px 11px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #3158a5;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 1.1px;
+    line-height: 1.5;
+    margin: 4px 0 22px;
+}
+
+/* TÃ­tulo */
+
+.vista-login .tarjeta-login h1 {
+    margin: 0 0 12px;
+    font-size: 34px;
+    line-height: 1.15;
+    letter-spacing: -1.3px;
+    color: #172554;
+}
+
+/* Texto descriptivo */
+
+.vista-login .tarjeta-login .subtitulo {
+    margin-bottom: 28px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* Espaciado del formulario */
+
+.vista-login #formulario-login {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.vista-login #formulario-login label {
+    margin-top: 4px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #334155;
+}
+
+.vista-login #formulario-login input {
+    box-sizing: border-box;
+    margin-bottom: 19px;
+}
+
+/* BotÃ³n */
+
+.vista-login #boton-entrar {
+    margin-top: 8px;
+    min-height: 52px;
+    border-radius: 13px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+/* Mensajes de error */
+
+.vista-login #mensaje-login {
+    margin: 12px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Usuarios de prueba */
+
+.vista-login .ayuda-usuarios {
+    margin-top: 20px;
+    padding: 16px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+    text-align: center;
+}
+
+.vista-login .ayuda-usuarios p {
+    margin: 0 0 10px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.vista-login .ayuda-usuarios code {
+    display: inline-block;
+    margin: 3px 0;
+    padding: 5px 7px;
+    border-radius: 6px;
+    background: #e8eefb;
+    color: #254a8a;
+    font-size: 12px;
+}
+
+/* AdaptaciÃ³n a pantallas pequeÃ±as */
+
+@media (max-width: 480px) {
+    .vista-login .tarjeta-login {
+        padding: 30px 20px 22px;
+    }
+
+    .vista-login .tarjeta-login h1 {
+        font-size: 29px;
+    }
+
+    .vista-login .tarjeta-login .etiqueta {
+        font-size: 9px;
+        letter-spacing: 0.7px;
+    }
+}
+
+
+/* ============== DISEÑO ELEGANTE RG ============== */
+:root {
+  --rg-azul: #244a78;
+  --rg-azul-oscuro: #172d4d;
+  --rg-celeste: #eaf2fb;
+  --rg-borde: #dce5f0;
+  --rg-texto: #243247;
+  --rg-sombra: 0 8px 24px rgba(26, 48, 78, .08);
+}
+
+body {
+  color: var(--rg-texto);
+  background: #f3f6fb;
+}
+
+.barra-superior {
+  background: linear-gradient(120deg, #172d4d, #2d5d91);
+  color: #fff;
+  border-radius: 0 0 20px 20px;
+  padding: 24px;
+  box-shadow: var(--rg-sombra);
+}
+
+.barra-superior h1 {
+  color: #fff;
+  letter-spacing: -.4px;
+}
+
+.tarjeta,
+.tarjeta-kpi,
+.tarjeta-login,
+.tarjeta-calificacion {
+  border: 1px solid var(--rg-borde);
+  border-radius: 16px;
+  box-shadow: var(--rg-sombra);
+}
+
+.tarjeta,
+.tarjeta-kpi {
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+
+.tarjeta-kpi:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(26, 48, 78, .12);
+}
+
+button {
+  border-radius: 9px;
+  transition: filter .2s ease, transform .2s ease;
+}
+
+button:hover {
+  filter: brightness(.96);
+}
+
+.navegacion-modulos {
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.boton-modulo {
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.boton-modulo.activo {
+  background: var(--rg-azul);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(36, 74, 120, .2);
+}
+
+input,
+select,
+textarea {
+  border-radius: 9px;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+}
+
+thead th {
+  background: var(--rg-celeste);
+  color: var(--rg-azul-oscuro);
+  font-weight: 700;
+}
+
+tbody tr:hover {
+  background: #f7faff;
+}
+
+.tarjetas-calificaciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 22px 0;
+}
+
+.tarjeta-calificacion {
+  background: #fff;
+  padding: 20px;
+  min-width: 0;
+}
+
+.tarjeta-calificacion h3 {
+  color: var(--rg-azul-oscuro);
+  font-size: 1rem;
+  margin: 0 0 16px;
+}
+
+.tarjeta-calificacion .notas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tarjeta-calificacion .nota-item {
+  background: #f1f5fa;
+  border: 1px solid #e5ebf3;
+  border-radius: 11px;
+  padding: 13px;
+  min-width: 0;
+}
+
+.tarjeta-calificacion .nota-item span {
+  display: block;
+  color: #64748b;
+  font-size: .78rem;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.tarjeta-calificacion .nota-item strong {
+  color: var(--rg-azul-oscuro);
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+
+.tarjeta-calificacion .nota-final {
+  background: #e7f5ee;
+  border-color: #c6e8d5;
+}
+
+.tarjeta-calificacion .nota-final strong {
+  color: #176b46;
+}
+
+@media (max-width: 650px) {
+  .tarjetas-calificaciones {
+    grid-template-columns: 1fr;
+  }
+
+  .barra-superior {
+    padding: 18px;
+  }
+}
+/* ============== FIN DISEÑO ELEGANTE RG ============== */
+
+/* Rediseño visual: verde esmeralda, coral y dorado; sin azul como acento principal */
+:root {
+  color-scheme: light;
+  --pagina: #f3f6f2;
+  --superficie: #ffffff;
+  --tinta-primaria: #1d2a24;
+  --tinta-secundaria: #627168;
+  --tinta-tenue: #7e8d83;
+  --borde: rgba(31, 62, 45, .12);
+  --linea: #e2e9e2;
+  --acento: #259447;
+  --acento-oscuro: #176c34;
+  --acento-suave: #e5f6e9;
+  --estado-bueno: #218838;
+  --estado-bueno-fondo: #e4f6e8;
+  --estado-alerta: #b87908;
+  --estado-critico: #c83f48;
+  --estado-critico-fondo: #ffebed;
+}
+body { background: radial-gradient(circle at top right, #e5f6e9 0, transparent 32%), var(--pagina); }
+.vista-dashboard { min-height: 100vh; }
+.barra-superior { background: linear-gradient(115deg,#228b3e,#47ad4e 68%,#77c65b); color:#fff; border-radius:0 0 22px 22px; padding:26px clamp(18px,4vw,48px); box-shadow:0 12px 30px #287c3b25; }
+.barra-superior .etiqueta,.barra-superior .chip-usuario { color:#fff; }
+.contenido { max-width:1500px; margin:0 auto; padding:24px clamp(14px,3vw,36px) 42px; }
+.tarjeta,.tarjeta-login { border:1px solid var(--borde); border-radius:18px; box-shadow:0 8px 28px rgba(25,65,39,.055); }
+.tarjeta { padding:22px; margin:0 0 20px; }
+.boton-modulo { border:1px solid transparent; border-radius:11px; padding:11px 16px; background:#e7eee8; color:#405448; font-weight:650; transition:all .18s ease; }
+.boton-modulo:hover { background:#d8f0dd; transform:translateY(-1px); }
+.boton-modulo.activo { background:linear-gradient(135deg,#258f43,#43ad4f); color:white; box-shadow:0 5px 14px #258f4330; }
+.navegacion-modulos { display:flex; flex-wrap:wrap; gap:9px; margin:20px 0; }
+button { border-radius:10px; font-weight:650; transition:filter .15s,transform .15s; }
+button:hover { filter:brightness(.97); }
+input,select { border-radius:9px; border-color:#d7e2d8; }
+input:focus,select:focus { outline:3px solid #35a85325; border-color:#36a451; }
+table { width:100%; border-collapse:separate; border-spacing:0; }
+thead th { background:#eaf5ec; color:#345642; font-size:12px; text-transform:uppercase; letter-spacing:.035em; }
+th,td { padding:13px 14px; border-bottom:1px solid #e8eee8; text-align:left; }
+tbody tr:hover { background:#f6fbf6; }
+.contenedor-tabla { overflow-x:auto; border:1px solid #e5ece5; border-radius:12px; }
+.encabezado-tarjeta { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+.texto-ayuda-modulo { color:var(--tinta-secundaria); }
+.acciones-barra { display:flex; gap:9px; flex-wrap:wrap; }
+.acciones-barra .boton-secundario { background:#ffffff20; color:#fff; border:1px solid #ffffff70; }
+@media(max-width:700px){ .barra-superior{padding:22px 16px} .contenido{padding:16px 10px 30px} .tarjeta{padding:14px} .navegacion-modulos{gap:6px} .boton-modulo{padding:9px 11px;font-size:13px} th,td{padding:10px;font-size:13px} }
+.boton-peligro { background:#fff0f0 !important; color:#b4232f !important; border:1px solid #f3c4c7 !important; margin-top:5px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --acento: #36a852;
+    --acento-oscuro: #8bd99a;
+    --acento-suave: #173b23;
+  }
+}

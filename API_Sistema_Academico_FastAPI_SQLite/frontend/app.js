@@ -1646,3 +1646,21 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+// MEJORA VALIDACION - EQUIPO 3 - ESTUDIANTE
+formularioEstudiante.addEventListener("submit", function(e){
+  const nombres = campoNombres.value.trim();
+  const apellidos = campoApellidos.value.trim();
+  const cuenta = campoCuenta.value.trim();
+  const correo = campoCorreo.value.trim();
+  
+  if(!nombres || !apellidos || !cuenta || !correo){
+    e.preventDefault();
+    alert("MEJORA: Nombres, Apellidos, Cuenta y Correo no pueden estar vacíos o ser solo espacios");
+    return false;
+  }
+  if(!correo.includes("@")){
+    e.preventDefault();
+    alert("MEJORA: El correo debe ser válido");
+    return false;
+  }
+});

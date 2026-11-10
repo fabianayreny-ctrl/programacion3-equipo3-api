@@ -113,8 +113,15 @@ def obtener_estudiante(estudiante_id: int):
         fila = conexion.execute(
             f"{CONSULTA_BASE} WHERE e.id = ?", (estudiante_id,)
         ).fetchone()
+
     if fila is None:
-        raise HTTPException(404, "Estudiante no encontrado")
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"No se encontró ningún estudiante con el ID {estudiante_id}. "
+                "Verifica el identificador e inténtalo nuevamente."
+            ),
+        )
     return dict(fila)
 
 

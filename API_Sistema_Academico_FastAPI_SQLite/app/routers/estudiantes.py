@@ -5,7 +5,7 @@ import sqlite3
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.database import conexion_lectura, transaccion, hash_clave
-from app.helpers import filas_a_lista, obtener_o_404
+from app.helpers import filas_a_lista
 from app.security import obtener_usuario_actual, exigir_roles
 from app.schemas import (
     EstudianteEntrada,
@@ -28,10 +28,28 @@ CONSULTA_BASE = """
 
 
 def _validar_carrera(conexion, carrera_id: int) -> None:
-    carrera = obtener_o_404(conexion, "carreras", carrera_id, "Carrera")
-    if not carrera["activo"]:
-        raise HTTPException(409, "No se puede asignar una carrera inactiva")
+    carrera = conexion.execute(
+        "SELECT * FROM carreras WHERE id = ?",
+        (carrera_id,),
+    ).fetchone()
 
+    if carrera is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"No se puede registrar el estudiante porque no existe "
+                f"una carrera con el ID {carrera_id}."
+            ),
+        )
+
+    if not carrera["activo"]:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"No se puede registrar el estudiante en la carrera "
+                f"con ID {carrera_id} porque se encuentra inactiva."
+            ),
+        )
 
 @router.get("", response_model=list[EstudianteRespuesta])
 def listar_estudiantes(
@@ -106,15 +124,22 @@ def mi_historial_academico(usuario: dict = Depends(obtener_usuario_actual)):
         ).fetchall()
     return [dict(f) for f in filas]
 
-
 @router.get("/{estudiante_id}", response_model=EstudianteRespuesta)
 def obtener_estudiante(estudiante_id: int):
     with conexion_lectura() as conexion:
         fila = conexion.execute(
             f"{CONSULTA_BASE} WHERE e.id = ?", (estudiante_id,)
         ).fetchone()
+
     if fila is None:
-        raise HTTPException(404, "Estudiante no encontrado")
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"No se encontró ningún estudiante con el ID {estudiante_id}. "
+                "Verifica el identificador e inténtalo nuevamente."
+            ),
+        )
+
     return dict(fila)
 
 
@@ -182,7 +207,10 @@ def crear_estudiante(datos: EstudianteEntrada, usuario: dict = Depends(exigir_ro
 
     except sqlite3.IntegrityError as error:
         raise HTTPException(
-            409,
-            "La cuenta, el usuario o el correo ya estÃ¡n registrados.",
-        ) from error
-
+            status_code=409,
+            detail=(
+                "No se pudo registrar el estudiante. Verifica que la cuenta, "
+                "el usuario y el correo no estén registrados y que los datos "
+                "relacionados sean válidos."
+            ),
+    ) from error

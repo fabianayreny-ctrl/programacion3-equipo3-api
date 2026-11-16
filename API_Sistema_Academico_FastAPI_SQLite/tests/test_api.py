@@ -166,3 +166,14 @@ def test_validacion_pydantic_devuelve_422(cliente):
     respuesta = cliente.post("/api/v1/estudiantes", json=invalido)
     assert respuesta.status_code == 422
 
+
+def test_verificar_estado_salud_api(cliente):
+    """
+    Prueba creada por Gerson (Estudiante 3):
+    Verifica que el endpoint /salud responda con código HTTP 200 y estado OK.
+    """
+    respuesta = cliente.get("/salud")
+    assert respuesta.status_code == 200
+    assert respuesta.json() == {"estado": "OK"}
+
+

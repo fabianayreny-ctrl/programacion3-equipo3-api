@@ -177,3 +177,40 @@ def test_verificar_estado_salud_api(cliente):
     assert respuesta.json() == {"estado": "OK"}
 
 
+def test_flujo_autenticacion_login_y_logout(cliente):
+    """
+    Prueba creada por Jahir (Estudiante 4):
+    Verifica el flujo completo de autenticación de la API:
+    1. Login con credenciales válidas devuelve token y datos del usuario.
+    2. Con el token se puede acceder a un endpoint protegido.
+    3. Logout invalida la sesión correctamente.
+    4. Después del logout, el mismo token es rechazado con 401.
+    """
+    # --- Paso 1: Login exitoso ---
+    login = cliente.post(
+        "/api/v1/auth/login",
+        json={"usuario": "admin", "clave": "admin123"},
+    )
+    assert login.status_code == 200
+    datos = login.json()
+    assert datos["rol"] == "ADMIN"
+    assert "access_token" in datos
+    assert datos["token_type"] == "bearer"
+    token = datos["access_token"]
+
+    # --- Paso 2: Acceder a recurso protegido con el token ---
+    cabeceras = {"Authorization": f"Bearer {token}"}
+    carreras = cliente.get("/api/v1/carreras", headers=cabeceras)
+    assert carreras.status_code == 200
+    assert isinstance(carreras.json(), list)
+
+    # --- Paso 3: Logout ---
+    logout = cliente.post("/api/v1/auth/logout", headers=cabeceras)
+    assert logout.status_code == 200
+    assert logout.json()["mensaje"] == "Sesión cerrada"
+
+    # --- Paso 4: Token invalidado tras logout ---
+    rechazado = cliente.get("/api/v1/carreras", headers=cabeceras)
+    assert rechazado.status_code == 401
+
+
